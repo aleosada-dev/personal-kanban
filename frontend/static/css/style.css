@@ -1,0 +1,141 @@
+/* Global Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Kanban Board Styles */
+.kanban-column {
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 500px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.kanban-column-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Kanban Card Styles */
+.kanban-card {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: move;
+    border: 1px solid #e0e0e0;
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+    flex: 1;
+}
+
+.card-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.card-actions .btn {
+    padding: 2px 6px;
+    font-size: 0.875rem;
+}
+
+.card-description {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Priority Badge */
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Modal Styles */
+.modal-content {
+    border-radius: 8px;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .kanban-column {
+        margin-bottom: 15px;
+    }
+
+    .card-title {
+        font-size: 0.9rem;
+    }
+
+    .card-description {
+        font-size: 0.8rem;
+    }
+}
+
+/* Animation for new cards */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kanban-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Loading state */
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+
+.htmx-indicator {
+    display: none;
+}
