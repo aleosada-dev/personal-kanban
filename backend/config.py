@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     APP_NAME: str = "Personal Kanban Board"
     DEBUG: bool = False
 
+    # JWT settings
+    SECRET_KEY: str = "your-secret-key-change-in-production-use-openssl-rand-hex-32"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     @property
     def DATABASE_URL(self) -> str:
         """Construct database URL"""
