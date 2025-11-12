@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Kanban Board</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- htmx -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-kanban"></i> Personal Kanban Board
+            </span>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row mb-3">
+            <div class="col">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                    <i class="bi bi-plus-circle"></i> Add New Card
+                </button>
+            </div>
+        </div>
+
+        <div class="row" id="kanban-board" hx-get="/api/cards" hx-trigger="load, cardUpdated from:body" hx-swap="innerHTML">
+            <!-- Kanban columns will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div class="modal fade" id="addCardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCardForm" hx-post="/api/cards" hx-ext="json-enc" hx-trigger="submit"
+                          hx-on::after-request="if(event.detail.successful) { document.getElementById('addCardForm').reset(); bootstrap.Modal.getInstance(document.getElementById('addCardModal')).hide(); htmx.trigger('#kanban-board', 'cardUpdated'); }">
+                        <div class="mb-3">
+                            <label for="cardTitle" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="cardTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cardDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="cardDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cardStatus" class="form-label">Status</label>
+                            <select class="form-select" id="cardStatus" name="status">
+                                <option value="todo" selected>To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cardPriority" class="form-label">Priority</label>
+                            <input type="number" class="form-control" id="cardPriority" name="priority" value="0" min="0">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Card</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Card Modal -->
+    <div class="modal fade" id="editCardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCardForm">
+                        <input type="hidden" id="editCardId" name="id">
+                        <div class="mb-3">
+                            <label for="editCardTitle" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="editCardTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCardDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editCardDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCardStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editCardStatus" name="status">
+                                <option value="todo">To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCardPriority" class="form-label">Priority</label>
+                            <input type="number" class="form-control" id="editCardPriority" name="priority" min="0">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+
+    <script>
+        // Configure htmx to render the kanban board
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'kanban-board') {
+                const cards = JSON.parse(event.detail.xhr.responseText);
+                renderKanbanBoard(cards);
+            }
+        });
+
+        function renderKanbanBoard(cards) {
+            const columns = {
+                todo: { title: 'To Do', cards: [], class: 'bg-light' },
+                in_progress: { title: 'In Progress', cards: [], class: 'bg-warning bg-opacity-10' },
+                done: { title: 'Done', cards: [], class: 'bg-success bg-opacity-10' }
+            };
+
+            cards.forEach(card => {
+                columns[card.status].cards.push(card);
+            });
+
+            const board = document.getElementById('kanban-board');
+            board.innerHTML = '';
+
+            Object.keys(columns).forEach(status => {
+                const column = columns[status];
+                const colDiv = document.createElement('div');
+                colDiv.className = 'col-md-4';
+                colDiv.innerHTML = `
+                    <div class="kanban-column ${column.class}">
+                        <h4 class="kanban-column-title">
+                            ${column.title}
+                            <span class="badge bg-secondary">${column.cards.length}</span>
+                        </h4>
+                        <div class="kanban-cards" id="column-${status}">
+                            ${column.cards.map(card => createCardHTML(card)).join('')}
+                        </div>
+                    </div>
+                `;
+                board.appendChild(colDiv);
+            });
+        }
+
+        function createCardHTML(card) {
+            return `
+                <div class="kanban-card" data-card-id="${card.id}">
+                    <div class="card-header">
+                        <h5 class="card-title">${escapeHtml(card.title)}</h5>
+                        <div class="card-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editCard(${card.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCard(${card.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ${card.description ? `<p class="card-description">${escapeHtml(card.description)}</p>` : ''}
+                    ${card.priority > 0 ? `<span class="badge bg-danger">Priority: ${card.priority}</span>` : ''}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
