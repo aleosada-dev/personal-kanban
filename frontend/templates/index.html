@@ -30,9 +30,20 @@
             <span class="navbar-brand mb-0 h1">
                 <i class="bi bi-kanban"></i> Personal Kanban Board
             </span>
-            <button class="btn btn-outline-light" onclick="logout()">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <select id="board-selector" class="form-select form-select-sm" style="width: auto;">
+                    <!-- Boards will be loaded here -->
+                </select>
+                <button class="btn btn-sm btn-outline-light" onclick="editCurrentBoard()" title="Edit Board">
+                    <i class="bi bi-gear"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#createBoardModal" title="Create Board">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-light" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -45,7 +56,7 @@
             </div>
         </div>
 
-        <div class="row" id="kanban-board" hx-get="/api/cards" hx-trigger="load, cardUpdated from:body" hx-swap="innerHTML">
+        <div class="row" id="kanban-board" hx-trigger="loadBoard from:body" hx-swap="innerHTML">
             <!-- Kanban columns will be loaded here -->
         </div>
     </div>
@@ -59,8 +70,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addCardForm" hx-post="/api/cards" hx-ext="json-enc" hx-trigger="submit"
-                          hx-on::after-request="if(event.detail.successful) { document.getElementById('addCardForm').reset(); bootstrap.Modal.getInstance(document.getElementById('addCardModal')).hide(); htmx.trigger('#kanban-board', 'cardUpdated'); }">
+                    <form id="addCardForm">
                         <div class="mb-3">
                             <label for="cardTitle" class="form-label">Title *</label>
                             <input type="text" class="form-control" id="cardTitle" name="title" required>
@@ -126,18 +136,109 @@
         </div>
     </div>
 
+    <!-- Create Board Modal -->
+    <div class="modal fade" id="createBoardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Board</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createBoardForm">
+                        <div class="mb-3">
+                            <label for="newBoardName" class="form-label">Board Name *</label>
+                            <input type="text" class="form-control" id="newBoardName" required maxlength="255">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newBoardDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="newBoardDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newBoardColor" class="form-label">Color</label>
+                            <input type="color" class="form-control form-control-color" id="newBoardColor" value="#667eea">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Board</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Board Modal -->
+    <div class="modal fade" id="editBoardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Board</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBoardForm">
+                        <input type="hidden" id="editBoardId">
+                        <div class="mb-3">
+                            <label for="editBoardName" class="form-label">Board Name *</label>
+                            <input type="text" class="form-control" id="editBoardName" required maxlength="255">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBoardDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editBoardDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBoardColor" class="form-label">Color</label>
+                            <input type="color" class="form-control form-control-color" id="editBoardColor">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="editBoardDefault">
+                            <label class="form-check-label" for="editBoardDefault">
+                                Set as default board
+                            </label>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-danger" onclick="deleteCurrentBoard()">Delete Board</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom JS -->
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/boards.js"></script>
 
     <script>
-        // Configure htmx to render the kanban board
-        document.body.addEventListener('htmx:afterSwap', function(event) {
-            if (event.detail.target.id === 'kanban-board') {
-                const cards = JSON.parse(event.detail.xhr.responseText);
-                renderKanbanBoard(cards);
+        // Initialize boards on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeBoards();
+        });
+
+        // Configure htmx to load cards for current board
+        document.body.addEventListener('htmx:configRequest', function(event) {
+            if (event.detail.path && event.detail.path.includes('/cards') && currentBoardId) {
+                event.detail.path = `/api/boards/${currentBoardId}/cards`;
+            }
+        });
+
+        // Configure htmx to render the kanban board when board is loaded
+        document.body.addEventListener('loadBoard', async function(event) {
+            if (!currentBoardId) return;
+
+            try {
+                const response = await fetch(`/api/boards/${currentBoardId}/cards`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const cards = await response.json();
+                    renderKanbanBoard(cards);
+                }
+            } catch (error) {
+                console.error('Error loading cards:', error);
             }
         });
 
