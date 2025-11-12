@@ -10,14 +10,22 @@ let allBoards = [];
 async function initializeBoards() {
     await loadBoards();
 
-    // Load the current board (from localStorage or default)
-    const savedBoardId = localStorage.getItem('current_board_id');
-    if (savedBoardId && allBoards.find(b => b.id == savedBoardId)) {
-        await switchToBoard(parseInt(savedBoardId));
-    } else if (allBoards.length > 0) {
-        // Switch to the first board (or default board)
-        const defaultBoard = allBoards.find(b => b.is_default) || allBoards[0];
-        await switchToBoard(defaultBoard.id);
+    // Check if board ID is specified in URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlBoardId = urlParams.get('id');
+
+    if (urlBoardId && allBoards.find(b => b.id == urlBoardId)) {
+        await switchToBoard(parseInt(urlBoardId));
+    } else {
+        // Load the current board (from localStorage or default)
+        const savedBoardId = localStorage.getItem('current_board_id');
+        if (savedBoardId && allBoards.find(b => b.id == savedBoardId)) {
+            await switchToBoard(parseInt(savedBoardId));
+        } else if (allBoards.length > 0) {
+            // Switch to the first board (or default board)
+            const defaultBoard = allBoards.find(b => b.is_default) || allBoards[0];
+            await switchToBoard(defaultBoard.id);
+        }
     }
 }
 

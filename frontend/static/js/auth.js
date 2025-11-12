@@ -59,9 +59,9 @@ if (loginForm) {
                 // Show success message
                 showSuccess('Login successful! Redirecting...');
 
-                // Redirect to the kanban board
+                // Redirect to the home page
                 setTimeout(() => {
-                    window.location.href = '/board';
+                    window.location.href = '/home';
                 }, 1000);
             } else {
                 showError(data.detail || 'Login failed. Please try again.');

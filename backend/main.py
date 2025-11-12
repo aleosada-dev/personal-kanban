@@ -39,9 +39,21 @@ templates = Jinja2Templates(directory="frontend/templates")
 
 
 @app.get("/")
-async def home(request: Request):
+async def login_page(request: Request):
     """Render the login page"""
     return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/home")
+async def home(request: Request):
+    """Render the home/dashboard page (protected)"""
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
+@app.get("/boards-list")
+async def boards_list(request: Request):
+    """Render the boards list page (protected)"""
+    return templates.TemplateResponse("boards_list.html", {"request": request})
 
 
 @app.get("/board")
