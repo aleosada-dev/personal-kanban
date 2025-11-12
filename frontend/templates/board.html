@@ -80,14 +80,6 @@
                             <textarea class="form-control" id="cardDescription" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="cardStatus" class="form-label">Status</label>
-                            <select class="form-select" id="cardStatus" name="status">
-                                <option value="todo" selected>To Do</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="done">Done</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
                             <label for="cardPriority" class="form-label">Priority</label>
                             <input type="number" class="form-control" id="cardPriority" name="priority" value="0" min="0">
                         </div>
@@ -253,7 +245,7 @@
 
         function createCardHTML(card) {
             return `
-                <div class="kanban-card" data-card-id="${card.id}">
+                <div class="kanban-card" data-card-id="${card.id}" draggable="true">
                     <div class="card-header">
                         <h5 class="card-title">${escapeHtml(card.title)}</h5>
                         <div class="card-actions">

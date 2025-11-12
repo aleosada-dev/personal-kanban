@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = {
                 title: document.getElementById('cardTitle').value,
                 description: document.getElementById('cardDescription').value,
-                status: document.getElementById('cardStatus').value,
+                status: 'todo',  // Default to "To Do" status
                 priority: parseInt(document.getElementById('cardPriority').value),
             };
 
@@ -217,28 +217,4 @@ document.addEventListener('drop', async (e) => {
     }
 
     draggedCard = null;
-});
-
-// Make cards draggable
-document.addEventListener('htmx:afterSwap', () => {
-    document.querySelectorAll('.kanban-card').forEach(card => {
-        card.setAttribute('draggable', 'true');
-    });
-});
-
-// Handle htmx form submission with JSON encoding
-htmx.defineExtension('json-enc', {
-    onEvent: function (name, evt) {
-        if (name === "htmx:configRequest") {
-            evt.detail.headers['Content-Type'] = "application/json";
-        }
-    },
-    encodeParameters: function (xhr, parameters, elt) {
-        xhr.overrideMimeType('application/json');
-        const formData = {};
-        for (const [key, value] of Object.entries(parameters)) {
-            formData[key] = value;
-        }
-        return JSON.stringify(formData);
-    }
 });
