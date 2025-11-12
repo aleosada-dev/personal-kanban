@@ -1,9 +1,48 @@
+// Authentication Helper Functions
+
+// Get authentication token from localStorage
+function getAuthToken() {
+    return localStorage.getItem('access_token');
+}
+
+// Get authorization headers
+function getAuthHeaders() {
+    const token = getAuthToken();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+}
+
+// Check if user is authenticated and redirect if not
+function checkAuth() {
+    const token = getAuthToken();
+    if (!token) {
+        window.location.href = '/';
+        return false;
+    }
+    return true;
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('access_token');
+    window.location.href = '/';
+}
+
+// Check authentication on page load
+if (!checkAuth()) {
+    // Will redirect if not authenticated
+}
+
 // Card Management Functions
 
 // Edit a card
 async function editCard(cardId) {
     try {
-        const response = await fetch(`/api/cards`);
+        const response = await fetch(`/api/cards`, {
+            headers: getAuthHeaders()
+        });
         const cards = await response.json();
         const card = cards.find(c => c.id === cardId);
 
@@ -37,6 +76,7 @@ async function deleteCard(cardId) {
     try {
         const response = await fetch(`/api/cards/${cardId}`, {
             method: 'DELETE',
+            headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -65,9 +105,7 @@ document.getElementById('editCardForm').addEventListener('submit', async (e) => 
     try {
         const response = await fetch(`/api/cards/${cardId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(formData),
         });
 
@@ -118,9 +156,7 @@ document.addEventListener('drop', async (e) => {
     try {
         const response = await fetch(`/api/cards/${cardId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ status: newStatus }),
         });
 
