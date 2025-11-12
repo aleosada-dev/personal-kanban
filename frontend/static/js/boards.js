@@ -88,7 +88,24 @@ async function switchToBoard(boardId) {
 async function loadCardsForCurrentBoard() {
     if (!currentBoardId) return;
 
-    htmx.trigger('#kanban-board', 'loadBoard');
+    try {
+        const response = await fetch(`/api/boards/${currentBoardId}/cards`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const cards = await response.json();
+            // Call renderKanbanBoard if it exists (it's defined in board.html)
+            if (typeof renderKanbanBoard === 'function') {
+                renderKanbanBoard(cards);
+            }
+        } else if (response.status === 401) {
+            // Unauthorized - redirect to login
+            window.location.href = '/';
+        }
+    } catch (error) {
+        console.error('Error loading cards:', error);
+    }
 }
 
 // Handle board selector change

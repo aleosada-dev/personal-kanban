@@ -59,7 +59,7 @@ async def boards_list(request: Request):
 @app.get("/board")
 async def board(request: Request):
     """Render the main kanban board page (protected)"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("board.html", {"request": request})
 
 
 @app.get("/register")

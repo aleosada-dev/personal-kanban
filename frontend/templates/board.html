@@ -56,7 +56,7 @@
             </div>
         </div>
 
-        <div class="row" id="kanban-board" hx-trigger="loadBoard from:body" hx-swap="innerHTML">
+        <div class="row" id="kanban-board">
             <!-- Kanban columns will be loaded here -->
         </div>
     </div>
@@ -217,31 +217,7 @@
             initializeBoards();
         });
 
-        // Configure htmx to load cards for current board
-        document.body.addEventListener('htmx:configRequest', function(event) {
-            if (event.detail.path && event.detail.path.includes('/cards') && currentBoardId) {
-                event.detail.path = `/api/boards/${currentBoardId}/cards`;
-            }
-        });
-
-        // Configure htmx to render the kanban board when board is loaded
-        document.body.addEventListener('loadBoard', async function(event) {
-            if (!currentBoardId) return;
-
-            try {
-                const response = await fetch(`/api/boards/${currentBoardId}/cards`, {
-                    headers: getAuthHeaders()
-                });
-
-                if (response.ok) {
-                    const cards = await response.json();
-                    renderKanbanBoard(cards);
-                }
-            } catch (error) {
-                console.error('Error loading cards:', error);
-            }
-        });
-
+        // Function to render the kanban board
         function renderKanbanBoard(cards) {
             const columns = {
                 todo: { title: 'To Do', cards: [], class: 'bg-light' },
