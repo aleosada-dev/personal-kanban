@@ -122,25 +122,91 @@ async def get_me(current_user: models.User = Depends(get_current_active_user)):
     return current_user
 
 
-# API Endpoints for Cards (Protected)
-@app.get("/api/cards", response_model=List[schemas.Card])
-def get_cards(
+# Board API Endpoints (Protected)
+@app.get("/api/boards", response_model=List[schemas.Board])
+def get_boards(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    """Get all kanban cards for the current user"""
-    cards = crud.get_cards(db, current_user.id)
+    """Get all boards for the current user"""
+    boards = crud.get_boards(db, current_user.id)
+    return boards
+
+
+@app.get("/api/boards/{board_id}", response_model=schemas.BoardWithStats)
+def get_board(
+    board_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get a specific board with statistics"""
+    board = crud.get_board_with_stats(db, board_id, current_user.id)
+    if board is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+    return board
+
+
+@app.post("/api/boards", response_model=schemas.Board, status_code=status.HTTP_201_CREATED)
+def create_board(
+    board: schemas.BoardCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Create a new board for the current user"""
+    return crud.create_board(db, board, current_user.id)
+
+
+@app.put("/api/boards/{board_id}", response_model=schemas.Board)
+def update_board(
+    board_id: int,
+    board: schemas.BoardUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Update a board for the current user"""
+    db_board = crud.update_board(db, board_id, board, current_user.id)
+    if db_board is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+    return db_board
+
+
+@app.delete("/api/boards/{board_id}")
+def delete_board(
+    board_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Delete a board for the current user"""
+    success = crud.delete_board(db, board_id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Cannot delete board (last board or not found)")
+    return {"message": "Board deleted successfully"}
+
+
+# API Endpoints for Cards (Protected)
+@app.get("/api/boards/{board_id}/cards", response_model=List[schemas.Card])
+def get_cards_by_board(
+    board_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get all kanban cards for a specific board"""
+    cards = crud.get_cards(db, board_id, current_user.id)
     return cards
 
 
-@app.post("/api/cards", response_model=schemas.Card, status_code=status.HTTP_201_CREATED)
+@app.post("/api/boards/{board_id}/cards", response_model=schemas.Card, status_code=status.HTTP_201_CREATED)
 def create_card(
+    board_id: int,
     card: schemas.CardCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    """Create a new kanban card for the current user"""
-    return crud.create_card(db, card, current_user.id)
+    """Create a new kanban card for a specific board"""
+    db_card = crud.create_card(db, card, board_id, current_user.id)
+    if db_card is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+    return db_card
 
 
 @app.put("/api/cards/{card_id}", response_model=schemas.Card)

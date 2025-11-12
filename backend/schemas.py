@@ -29,12 +29,53 @@ class CardUpdate(BaseModel):
 class Card(CardBase):
     """Schema for card response"""
     id: int
-    user_id: int
+    board_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+# Board Schemas
+class BoardBase(BaseModel):
+    """Base board schema"""
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    color: str = Field(default="#667eea", pattern="^#[0-9A-Fa-f]{6}$")
+
+
+class BoardCreate(BoardBase):
+    """Schema for creating a board"""
+    is_default: bool = False
+
+
+class BoardUpdate(BaseModel):
+    """Schema for updating a board"""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
+    is_default: Optional[bool] = None
+
+
+class Board(BoardBase):
+    """Schema for board response"""
+    id: int
+    user_id: int
+    is_default: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BoardWithStats(Board):
+    """Schema for board response with card statistics"""
+    card_count: int = 0
+    todo_count: int = 0
+    in_progress_count: int = 0
+    done_count: int = 0
 
 
 # User Schemas

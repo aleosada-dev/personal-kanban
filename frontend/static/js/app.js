@@ -39,8 +39,13 @@ if (!checkAuth()) {
 
 // Edit a card
 async function editCard(cardId) {
+    if (!currentBoardId) {
+        alert('No board selected');
+        return;
+    }
+
     try {
-        const response = await fetch(`/api/cards`, {
+        const response = await fetch(`/api/boards/${currentBoardId}/cards`, {
             headers: getAuthHeaders()
         });
         const cards = await response.json();
@@ -80,7 +85,7 @@ async function deleteCard(cardId) {
         });
 
         if (response.ok) {
-            htmx.trigger('#kanban-board', 'cardUpdated');
+            await loadCardsForCurrentBoard();
         } else {
             alert('Failed to delete card');
         }
@@ -90,34 +95,78 @@ async function deleteCard(cardId) {
     }
 }
 
-// Handle edit form submission
-document.getElementById('editCardForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Handle add card form submission
+document.addEventListener('DOMContentLoaded', () => {
+    const addForm = document.getElementById('addCardForm');
+    if (addForm) {
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-    const cardId = document.getElementById('editCardId').value;
-    const formData = {
-        title: document.getElementById('editCardTitle').value,
-        description: document.getElementById('editCardDescription').value,
-        status: document.getElementById('editCardStatus').value,
-        priority: parseInt(document.getElementById('editCardPriority').value),
-    };
+            if (!currentBoardId) {
+                alert('No board selected');
+                return;
+            }
 
-    try {
-        const response = await fetch(`/api/cards/${cardId}`, {
-            method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(formData),
+            const formData = {
+                title: document.getElementById('cardTitle').value,
+                description: document.getElementById('cardDescription').value,
+                status: document.getElementById('cardStatus').value,
+                priority: parseInt(document.getElementById('cardPriority').value),
+            };
+
+            try {
+                const response = await fetch(`/api/boards/${currentBoardId}/cards`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addCardModal')).hide();
+                    document.getElementById('addCardForm').reset();
+                    await loadCardsForCurrentBoard();
+                } else {
+                    alert('Failed to create card');
+                }
+            } catch (error) {
+                console.error('Error creating card:', error);
+                alert('Failed to create card');
+            }
         });
+    }
 
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('editCardModal')).hide();
-            htmx.trigger('#kanban-board', 'cardUpdated');
-        } else {
-            alert('Failed to update card');
-        }
-    } catch (error) {
-        console.error('Error updating card:', error);
-        alert('Failed to update card');
+    // Handle edit card form submission
+    const editForm = document.getElementById('editCardForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const cardId = document.getElementById('editCardId').value;
+            const formData = {
+                title: document.getElementById('editCardTitle').value,
+                description: document.getElementById('editCardDescription').value,
+                status: document.getElementById('editCardStatus').value,
+                priority: parseInt(document.getElementById('editCardPriority').value),
+            };
+
+            try {
+                const response = await fetch(`/api/cards/${cardId}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('editCardModal')).hide();
+                    await loadCardsForCurrentBoard();
+                } else {
+                    alert('Failed to update card');
+                }
+            } catch (error) {
+                console.error('Error updating card:', error);
+                alert('Failed to update card');
+            }
+        });
     }
 });
 
@@ -161,7 +210,7 @@ document.addEventListener('drop', async (e) => {
         });
 
         if (response.ok) {
-            htmx.trigger('#kanban-board', 'cardUpdated');
+            await loadCardsForCurrentBoard();
         }
     } catch (error) {
         console.error('Error updating card status:', error);
